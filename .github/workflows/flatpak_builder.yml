@@ -38,20 +38,20 @@ jobs:
 
       - name: YAML Lint
         env:
-          FLATPAK_MANIFEST: org.jellyfin.JellyfinServer.yml
+          FLATPAK_MANIFEST: dev.lizardbyte.sunshine.yml
         run: |
           yamllint ${FLATPAK_MANIFEST}
 
       - name: External Data Checker
         env:
-          FLATPAK_MANIFEST: org.jellyfin.JellyfinServer.yml
+          FLATPAK_MANIFEST: dev.lizardbyte.sunshine.yml
         run: |
           flatpak run org.flathub.flatpak-external-data-checker $FLATPAK_MANIFEST
 
       - name: Build Flatpak
         run: |
           sudo su $(whoami) -c '
-            FLATPAK_MANIFEST=org.jellyfin.JellyfinServer.yml
+            FLATPAK_MANIFEST=dev.lizardbyte.sunshine.yml
 
             flatpak run org.flatpak.Builder --user --repo=local_repo --install-deps-from=flathub \
             --force-clean --default-branch=test build $FLATPAK_MANIFEST
@@ -59,7 +59,7 @@ jobs:
 
       - name: Bundle Flatpak
         env:
-          FLATPAK_ID: org.jellyfin.JellyfinServer
+          FLATPAK_ID: dev.lizardbyte.sunshine
         run: |
           mkdir artifacts
           flatpak repo --branches local_repo
