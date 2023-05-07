@@ -157,7 +157,7 @@ modules:
     sources:
       - type: git
         url: https://github.com/LizardByte/Sunshine.git
-        commit: a4a5d30603c743f9b6d17014f207c07a660f98e6
+        commit: cb406bce06dc66942c5712ecca368ff69312cdbc
     post-install:
       # use `sed` to update apps.json with prefixes required for flatpak
       # -r (regex)
