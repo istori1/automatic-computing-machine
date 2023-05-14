@@ -10,12 +10,15 @@ on:
 jobs:
   build_native_flatpak:
     name: Build Flatpak
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    env:
+      FLATPAK_ID: org.jellyfin.JellyfinServer
+      FLATPAK_MANIFEST: org.jellyfin.JellyfinServer.yml
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+      # - name: Checkout
+      #   uses: actions/checkout@v3
+      #   with:
+      #     submodules: recursive
 
       - name: Builder Cache
         uses: actions/cache@v3
@@ -27,6 +30,14 @@ jobs:
           restore-keys: |
             flatpak
 
+      - name: Get Git Source
+        env:
+          URL: https://github.com/flathub/com.dec05eba.gpu_screen_recorder.git
+          COMMIT: 7037f8e9de7f32af61dfbbcb2bf3d5dd505f5e35
+        run: |
+          git clone --depth 1 --recursive ${URL} .
+          git reset --hard ${COMMIT}
+
       - name: Setup Dependencies
         run: |
           sudo apt update -y
@@ -37,34 +48,27 @@ jobs:
           sudo su $(whoami) -c 'flatpak install flathub org.flatpak.Builder org.flathub.flatpak-external-data-checker -y'
 
       - name: YAML Lint
-        env:
-          FLATPAK_MANIFEST: dev.lizardbyte.sunshine.yml
-        run: |
-          yamllint ${FLATPAK_MANIFEST}
+        run: yamllint ${FLATPAK_MANIFEST}
 
       - name: External Data Checker
-        env:
-          FLATPAK_MANIFEST: dev.lizardbyte.sunshine.yml
-        run: |
-          flatpak run org.flathub.flatpak-external-data-checker $FLATPAK_MANIFEST
+        run: flatpak run org.flathub.flatpak-external-data-checker ${FLATPAK_MANIFEST}
 
       - name: Build Flatpak
         run: |
+          echo ${FLATPAK_MANIFEST} > MANIFEST.txt
           sudo su $(whoami) -c '
-            FLATPAK_MANIFEST=dev.lizardbyte.sunshine.yml
+            FLATPAK_MANIFEST=$(cat MANIFEST.txt)
 
             flatpak run org.flatpak.Builder --user --repo=local_repo --install-deps-from=flathub \
-            --force-clean --default-branch=test build $FLATPAK_MANIFEST
+            --force-clean --default-branch=test build ${FLATPAK_MANIFEST}
           '
 
       - name: Bundle Flatpak
-        env:
-          FLATPAK_ID: dev.lizardbyte.sunshine
         run: |
           mkdir artifacts
           flatpak repo --branches local_repo
-          flatpak build-bundle local_repo artifacts/${FLATPAK_ID}_$(uname -m).flatpak $FLATPAK_ID test
-          flatpak build-bundle --runtime local_repo artifacts/${FLATPAK_ID}_Debug_$(uname -m).flatpak $FLATPAK_ID.Debug test
+          flatpak build-bundle local_repo artifacts/${FLATPAK_ID}_$(uname -m).flatpak ${FLATPAK_ID} test
+          flatpak build-bundle --runtime local_repo artifacts/${FLATPAK_ID}_Debug_$(uname -m).flatpak ${FLATPAK_ID}.Debug test
 
       - name: Upload Flatpak Artifacts
         uses: actions/upload-artifact@v3
